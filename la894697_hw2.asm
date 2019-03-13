@@ -1,147 +1,225 @@
-		.text
-		j	bootstrap			
+.data 
+#Enter the size of the array
+sizeArray: .word 9
 
-		.data
-string1:		.asciiz "Enter Array Size: \n"
-string2:		.asciiz "Add element:  \n"
-string3:		.asciiz "Sorted Array: \n"
-string4:		.asciiz " "
+#The array list, make sure the sizeArray is correctly input
+intArray: .word 7 9 4 3 8 1 6 2 5
 
-		.text
-		.globl	bootstrap 
-bootstrap: 
-		la	$a0, string1		
-		li	$v0, 4			
-		syscall				
+prompt_Message1: .asciiz "Enter 0 to sort in descending order.\n"
+prompt_Message2: .asciiz "Any number different than 0 will sort in ascending order.\n"
+space: .asciiz " "
+newLine: .asciiz "\n"
 
-		li	$v0, 5			
-		syscall				
-		move	$s2, $v0		
-		sll	$s0, $v0, 2		
-		sub	$sp, $sp, $s0		
-		la	$a0, string2		
-		li	$v0, 4			
-		syscall				
+title: .asciiz "The Original List: "
+DsortTitle: .asciiz "DESCENDING List: "
+AsortTitle: .asciiz "ASCENDING List: "
 
-		move	$s1, $zero		
-loop_get:	bge	$s1, $s2, exit_get	
-		sll	$t0, $s1, 2		
-		add	$t1, $t0, $sp		
-		li	$v0, 5			
-		syscall				
-		sw	$v0, 0($t1)		
-						
-		la	$a0, string4
-		li	$v0, 4
-		syscall
-		addi	$s1, $s1, 1		
-		j	loop_get
-exit_get:	move	$a0, $sp		
-		move	$a1, $s2		
-		jal	startselection_sort			
-						
-						
-		la	$a0, string3		
-		li	$v0, 4
-		syscall
+.text
 
-		move	$s1, $zero		
-loop_print:	bge	$s1, $s2, exit_print	
-		sll	$t0, $s1, 2		
-		add	$t1, $sp, $t0		
-		lw	$a0, 0($t1)		
-		li	$v0, 1			
-		syscall				
+main: 
 
-		la	$a0, string4
-		li	$v0, 4
-		syscall
-		addi	$s1, $s1, 1		
-		j	loop_print
-exit_print:	add	$sp, $sp, $s0		 
-              
-		li	$v0, 10			
-		syscall			
-		
-		
+#Prompt user the message1
 
-startselection_sort:		addi	$sp, $sp, -20		
-		sw	$ra, 0($sp)
-		sw	$s0, 4($sp)
-		sw	$s1, 8($sp)
-		sw	$s2, 12($sp)
-		sw	$s3, 16($sp)
-
-		move 	$s0, $a0		
-		move	$s1, $zero		
-
-		subi	$s2, $a1, 1	
-startselection_sort_loop:	bge 	$s1, $s2, startselection_sort_exit	
-		
-		move	$a0, $s0	
-		move	$a1, $s1	
-		move	$a2, $s2		
-		
-		jal	index_minimum
-		move	$s3, $v0		
-		
-		move	$a0, $s0		
-		move	$a1, $s1		
-		move	$a2, $s3		
-		
-		jal	swap
-
-		addi	$s1, $s1, 1		
-		j	startselection_sort_loop		
-		
-startselection_sort_exit:	lw	$ra, 0($sp)		
-		lw	$s0, 4($sp)
-		lw	$s1, 8($sp)
-		lw	$s2, 12($sp)
-		lw	$s3, 16($sp)
-		addi	$sp, $sp, 20		
-		jr	$ra			
+li $v0, 4
+la $a0 , prompt_Message1
+syscall
 
 
+#Prompt user the message2
 
-index_minimum:		move	$t0, $a0		
-		move	$t1, $a1		
-		move	$t2, $a2		
-		
-		sll	$t3, $t1, 2		
-		add	$t3, $t3, $t0				
-		lw	$t4, 0($t3)		
-		
-		addi	$t5, $t1, 1		
-index_minimum_loop:	bgt	$t5, $t2, index_minimum_end	
+li $v0, 4
+la $a0 , prompt_Message2
+syscall
 
-		sll	$t6, $t5, 2		
-		add	$t6, $t6, $t0			
-		lw	$t7, 0($t6)		
+#Get user input message
+li $v0, 5
+syscall
 
-		bge	$t7, $t4, index_minimum_if_exit	
-		
-		move	$t1, $t5		
-		move	$t4, $t7	
+move $t9, $v0
 
-index_minimum_if_exit:	addi	$t5, $t5, 1		
-		j	index_minimum_loop
+#Jump and link to the function if user input is 0 funcAscending or else funcDescending
 
-index_minimum_end:	move 	$v0, $t1		
-		jr	$ra
+beq $t9, $zero, funcDescending
+jal funcAscending
+
+
+#Code block to output the ascending list
+funcAscending:
+
+la $a0, title
+li $v0,4
+syscall 
+
+la $a0, intArray 
+la $t0, sizeArray
+lw $t0, ($t0)
+sll $t0, $t0, 2
+addi $t0, $t0, -4
+add $a1, $a0, $t0 
+jal AscendingshowResult
+
+la $a0, newLine 
+li $v0, 4
+syscall
+
+la $a0, intArray
+jal AscendingSecSort 
+
+la $a0, AsortTitle 
+li $v0,4
+syscall 
+
+la $a0, intArray 
+jal AscendingshowResult
+
+li $v0, 10 
+syscall
+
+
+AscendingshowResult:move $t0, $a0
+AscendingoutterLoop: blt $a1, $t0, AscendingExit 
+
+lw $a0,($t0)
+li $v0,1
+syscall
+
+la $a0, space 
+li $v0,4
+syscall
+
+addi $t0, $t0, 4 
+j AscendingoutterLoop
+
+AscendingExit: jr $ra
+
+
+AscendingSelect:
+move $t0, $a0
+move $t4, $a0
+Ascendingloop:
+addi $t4, $t4, 4
+blt $a1, $t4, AscendingDone
+lw $t2, ($t0)
+lw $t1, ($t4)
+slt $t5, $t2, $t1
+bne $t5, $zero, Ascendingloop
+move $t0, $t4
+j Ascendingloop
+AscendingDone: lw $t2, ($a0)
+lw $t1, ($t0)
+sw $t2, ($t0)
+sw $t1, ($a0)
+jr $ra
 
 
 
-swap:		sll	$t1, $a1, 2		
-		add	$t1, $a0, $t1		
-		
-		sll	$t2, $a2, 2		
-		add	$t2, $a0, $t2		
+AscendingSecSort: 
+move $s1, $a0
+AscendingInnerLoop:
+beq $a1, $s1, AscendingExitInnerLoop 
+addi $sp, $sp, -8
+sw $ra, ($sp) 
+sw $a0, 4 ($sp) 
+move $a0, $s1 
+jal AscendingSelect
+lw $ra, ($sp) 
+lw $a0, 4 ($sp)
+addi $sp, $sp, 8
+addi $s1, $s1, 4
+j AscendingInnerLoop
 
-		lw	$t0, 0($t1)		
-		lw	$t3, 0($t2)		
+AscendingExitInnerLoop: jr $ra
 
-		sw	$t3, 0($t1)		
-		sw	$t0, 0($t2)		
+la $v0, 10
+syscall
 
-		jr	$ra
+#code block to output the descending 
+funcDescending:
+la $a0, title
+li $v0,4
+syscall 
+
+la $a0, intArray 
+la $t0, sizeArray
+lw $t0, ($t0)
+sll $t0, $t0, 2
+addi $t0, $t0, -4
+add $a1, $a0, $t0 
+jal showResult
+
+la $a0, newLine 
+li $v0, 4
+syscall
+
+la $a0, intArray
+jal secsort 
+
+la $a0, DsortTitle 
+li $v0,4
+syscall 
+
+la $a0, intArray 
+jal showResult
+
+li $v0, 10 
+syscall
+
+
+showResult:move $t0, $a0
+outterLoop: blt $a1, $t0, exit 
+
+lw $a0,($t0)
+li $v0,1
+syscall
+
+la $a0, space 
+li $v0,4
+syscall
+
+addi $t0, $t0, 4 
+j outterLoop
+
+exit: jr $ra
+
+
+pick:
+move $t0, $a0
+move $t4, $a0
+
+loop:
+addi $t4, $t4, 4
+blt $a1, $t4, done
+lw $t2, ($t0)
+lw $t1, ($t4)
+slt $t5, $t2, $t1
+beq $t5, $zero, loop
+move $t0, $t4
+j loop
+done: lw $t2, ($a0)
+lw $t1, ($t0)
+sw $t2, ($t0)
+sw $t1, ($a0)
+jr $ra
+
+
+secsort: 
+move $s1, $a0
+innerLoop:
+beq $a1, $s1, exitInnerLoop 
+addi $sp, $sp, -8
+sw $ra, ($sp) 
+sw $a0, 4 ($sp) 
+move $a0, $s1 
+jal pick
+lw $ra, ($sp) 
+lw $a0, 4 ($sp)
+addi $sp, $sp, 8
+addi $s1, $s1, 4
+j innerLoop
+
+exitInnerLoop: jr $ra
+
+la $v0, 10
+syscall
+
+
